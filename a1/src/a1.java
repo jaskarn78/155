@@ -10,7 +10,6 @@ import static com.jogamp.opengl.GL4.*;
 import com.jogamp.common.nio.Buffers;
 import com.jogamp.opengl.*;
 import com.jogamp.opengl.awt.GLCanvas;
-import com.jogamp.opengl.fixedfunc.GLMatrixFunc;
 import com.jogamp.opengl.util.FPSAnimator;
 import graphicslib3D.GLSLUtils;
 
@@ -21,14 +20,15 @@ import java.util.Vector;
 
 import com.jogamp.opengl.GLAutoDrawable;
 
-public class a1 extends JFrame implements GLEventListener, MouseWheelListener {
+public class a1 extends JFrame implements GLEventListener, MouseWheelListener, KeyListener {
     private GLCanvas myCanvas;
     private int rendering_program;
     private int vao[] = new int[1];
     private GLSLUtils util = new GLSLUtils();
-    private Button button1, button2, button3;
+    private Button button1, button2;
     private boolean flag = false;
 
+    private float colorFlag = 0.0f;
     private float x = 0.0f;
     private float y = 0.0f;
     private float scale = 1.0f;
@@ -36,15 +36,19 @@ public class a1 extends JFrame implements GLEventListener, MouseWheelListener {
     private float incy = 0.00f;
     private float angle = 0.01f;
     private double radius = 0.75f;
+
     private FPSAnimator animator;
 
 
     public a1()
     {	setTitle("CSc 155 Assignment 1");
         setSize(600, 400);
+
         myCanvas = new GLCanvas();
         myCanvas.addGLEventListener(this);
         myCanvas.addMouseWheelListener(this);
+        myCanvas.addKeyListener(this);
+
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(myCanvas, BorderLayout.CENTER);
 
@@ -53,14 +57,14 @@ public class a1 extends JFrame implements GLEventListener, MouseWheelListener {
 
         button1 = new Button("UP/Down");
         button2 = new Button("Circle");
-        button3 = new Button("Color");
 
         sidePanel.add(button1);
         sidePanel.add(button2);
-        sidePanel.add(button3);
 
         getContentPane().add(sidePanel, BorderLayout.WEST);
+        myCanvas.setFocusable(true);
         setVisible(true);
+
         animator = new FPSAnimator(myCanvas, 30);
         animator.start();
     }
@@ -72,30 +76,36 @@ public class a1 extends JFrame implements GLEventListener, MouseWheelListener {
         float bkg[] = {0.0f, 0.0f, 0.0f, 1.0f};
         FloatBuffer bkgBuffer = Buffers.newDirectFloatBuffer(bkg);
         gl.glClearBufferfv(GL_COLOR, 0, bkgBuffer);
-        checkFlag();
 
+        checkFlag();
         angle+=0.01f;
 
-        if(x > 0.5f) incx = -0.01f;
-        if(x < -0.5) incx = 0.01f;
+        if(x > 1.0f) incx = -0.01f;
+        if(x < -1.0) incx = 0.01f;
 
-        if(y > 0.5f) incy = -0.01f;
-        if(y< -0.5f) incy = 0.01f;
+        if(y > 1.0f) incy = -0.01f;
+        if(y< -1.0f) incy = 0.01f;
 
         upDown();
         circle();
+        glFunctions(gl);
+        myCanvas.requestFocus();
 
+    }
+
+    private void glFunctions(GL4 gl)
+    {
 
         int offset_loc = gl.glGetUniformLocation(rendering_program, "incx");
         int offset_y = gl.glGetUniformLocation(rendering_program, "incy");
         int scale_pts= gl.glGetUniformLocation(rendering_program, "scale");
+        int colorToggle = gl.glGetUniformLocation(rendering_program, "colorFlag");
 
         gl.glProgramUniform1f(rendering_program, scale_pts, scale);
         gl.glProgramUniform1f(rendering_program, offset_loc, x);
         gl.glProgramUniform1f(rendering_program, offset_y, y);
+        gl.glProgramUniform1f(rendering_program, colorToggle, colorFlag);
         gl.glDrawArrays(GL_TRIANGLES,0,3);
-
-
     }
 
     private void upDown()
@@ -225,7 +235,7 @@ public class a1 extends JFrame implements GLEventListener, MouseWheelListener {
         String[] program = new String[lines.size()];
         for(int i=0; i<lines.size(); i++)
         {
-            program[i] = (String) lines.elementAt(i)+ "\n";
+            program[i] = lines.elementAt(i) + "\n";
         }
         return program;
     }
@@ -234,11 +244,36 @@ public class a1 extends JFrame implements GLEventListener, MouseWheelListener {
     @Override
     public void mouseWheelMoved(MouseWheelEvent e) {
         if(e.getPreciseWheelRotation() > 0)
-            scale = (float) (scale+(Math.abs(e.getPreciseWheelRotation())));
+            scale = scale+0.1f;
         else {
-            scale = (float) (scale+Math.abs(e.getPreciseWheelRotation()));
-            scale = scale/2;
+            if(scale > 0.01)
+                scale=scale-0.1f;
         }
     }
+
+    @Override
+    public void keyTyped(KeyEvent e) {
+
+    }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+        if(e.getKeyChar() == 'c')
+            if(colorFlag == 0.0f)
+                colorFlag=1.0f;
+            else
+                colorFlag = 0.0f;
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {
+
+    }
+    public void setX(float x)
+    {
+        this.x = x;
+    }
+
 }
+
 
